@@ -1,5 +1,12 @@
 #!/usr/bin/julia
 
+# use the PyCall package
+using PyCall
+# add current folder to list of places to search
+unshift!(PyVector(pyimport("sys")["path"]), "")
+# search current folder for Output.py
+@pyimport Output
+
 #=
 for x in ARGS;
 	println(x);
@@ -25,6 +32,8 @@ function doCycle(timeline)
 	for currTime in 1:9
 		# start row with time stamp
 		print("$currTime\t")
+
+		message = ""
 		
 		# find value of each channel
 		for channel::Integer = 1:length(timeline)
@@ -32,11 +41,11 @@ function doCycle(timeline)
 			(amp, currIndex[channel]) = 
 				readChannel(timeline, channel, currIndex[channel], currTime)
 
-			# print retrieved value
-			print("$amp ");
+			# stash retreived value for setting later
+			message = message * "$amp "
 		end
-		# print new line to separate rows
-		println();
+		# set all values at once
+		writeOut(message);
 	end
 end
 
@@ -75,6 +84,12 @@ function readChannel(timeline, channelID::Integer, currIndex::Integer, currTime:
 	return (0, currIndex)
 end
 
+# will eventually change PWM pin values through Python function
+function writeOut(value)
+	# call python function
+	Output.printStuff(value);
+end
+
 # make timeline as an ambiguous array
 timeline = []
 
@@ -99,6 +114,6 @@ push!(timeline[3], Interval(2, 3, 1))
 push!(timeline[3], Interval(6, 2, 9))
 
 n = 1
-for n in 1:5
+for n in 1:3
 	doCycle(timeline);
 end
