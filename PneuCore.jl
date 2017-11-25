@@ -1,17 +1,13 @@
 #!/usr/bin/julia
 
+module PneuCore
+
 # use the PyCall package
-using PyCall
+using PyCall: @pyimport, pyimport, PyVector
 # add current folder to list of places to search
 unshift!(PyVector(pyimport("sys")["path"]), "")
 # search current folder for Output.py
 @pyimport Output
-
-#=
-for x in ARGS;
-	println(x);
-end
-=#
 
 # Make data structure used for each interval in the timeline
 struct Interval
@@ -19,43 +15,49 @@ struct Interval
 	duration::Int8
 	amplitude::Int8
 end
+export Interval
+
 
 # runs through one cycle of the timeline
-function doCycle(timeline)
-	# label the output
-	println("Cycle $n:");
+function doCycle(timeline::Array{Array{Interval,1},1}, totalTime::Float16)
+	const STEPS_IN_TIMELINE = 10
 
 	# set the index on each channel to 1
-	currIndex::Array{Integer,1} = ones(length(timeline))
+	currIndex::Array{Int8,1} = ones(length(timeline))
 
 	# run through timeline
-	for currTime in 1:9
+	for currTime::Int8 in 1:STEPS_IN_TIMELINE
 		# start row with time stamp
 		print("$currTime\t")
 
-		message = ""
+		message::String = ""
 		
 		# find value of each channel
-		for channel::Integer = 1:length(timeline)
+		for channel::Int8 = 1:length(timeline)
 			# return value and update channel's current index
-			(amp, currIndex[channel]) = 
+			(amp::Int8, currIndex[channel]::Int8) = 
 				readChannel(timeline, channel, currIndex[channel], currTime)
 
 			# stash retreived value for setting later
 			message = message * "$amp "
 		end
+
 		# set all values at once
 		writeOut(message);
+
+		sleep(totalTime/STEPS_IN_TIMELINE)
 	end
 end
+export doCycle
+
 
 # return value on the selected channel given the time
-function readChannel(timeline, channelID::Integer, currIndex::Integer, currTime::Integer)
+function readChannel(timeline::Array{Array{Interval,1},1}, channelID::Int8, currIndex::Int8, currTime::Int8)
 	# while not past last interval
 	while currIndex <= length(timeline[channelID])
 
 		# get interval to check
-		currInterval = timeline[channelID][currIndex]
+		currInterval::Interval = timeline[channelID][currIndex]
 
 		# if we're past the starting point
 		if currTime >= currInterval.start
@@ -80,40 +82,16 @@ function readChannel(timeline, channelID::Integer, currIndex::Integer, currTime:
 		end
 	end
 
-	# after last interval
+	# after last interval in timeline
 	return (0, currIndex)
 end
 
 # will eventually change PWM pin values through Python function
 function writeOut(value)
 	# call python function
-	Output.printStuff(value);
+	Output.print_stuff(value);
 end
+export writeOut
 
-# make timeline as an ambiguous array
-timeline = []
 
-# add an array of intervals to the timeline
-push!(timeline, Interval[])
-# add intervals to that array
-push!(timeline[1], Interval(0, 2, 2))
-push!(timeline[1], Interval(4, 1, 6))
-push!(timeline[1], Interval(8, 2, 8))
-
-# add another array of intervals to the timeline
-push!(timeline, Interval[])
-# add intervals to that new interval
-push!(timeline[2], Interval(0, 2, 2))
-push!(timeline[2], Interval(3, 4, 4))
-push!(timeline[2], Interval(4, 1, 6))
-push!(timeline[2], Interval(8, 4, 8))
-
-# you know the drill.
-push!(timeline, Interval[])
-push!(timeline[3], Interval(2, 3, 1))
-push!(timeline[3], Interval(6, 2, 9))
-
-n = 1
-for n in 1:3
-	doCycle(timeline);
 end
