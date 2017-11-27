@@ -7,30 +7,29 @@ tic() # start timer
 # bring in modules from other files. Order matters.
 include("./PneuCore.jl")
 include("./Input.jl")
-using Input: getTimeline
+using Input: readTimeline
 using PneuCore: Interval, doCycle, writeOut
 
 println("done!")
 toc() # print timer value
 
-@time writeOut("Python loaded")
+#@time writeOut("Python loaded")
 println()
 
 # Broken into a function to allow setting type of timeline
 function start()
-	timeline::Array{Array{Interval,1},1} = getTimeline()
-	
-	# choose how long to spend on one cycle
-	cycleTime::Float16 = 0.1
+	timeline = Input.readTimeline()
+	println(timeline)
+	# choose how long to spend on one cycle, in seconds
+	cycleTime::Float16 = 1
 
 	for a = 1:3
 		# label the output
 		println("Cycle $a:");
 		# extra time is approximately constant,
 		#  independent of the cycle length.
-		@time doCycle(timeline, cycleTime);
+		@time PneuCore.doCycle(timeline, cycleTime);
 	end
 end
 
 start()
-

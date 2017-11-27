@@ -86,6 +86,7 @@ function readChannel(timeline::Array{Array{Interval,1},1}, channelID::Int8, curr
 	return (0, currIndex)
 end
 
+
 # will eventually change PWM pin values through Python function
 function writeOut(value)
 	# call python function
