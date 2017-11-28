@@ -5,21 +5,36 @@ module Input
 # Must have an include() call before this.
 using PneuCore: Interval
 
-function readTimeline()
+# reads timeline from file. Check README.md for more details.
+function readTimeline(filename::String, verbose::Bool = false)
 	# make timeline array
 	timeline::Array{Array{Interval,1},1} = []
 
-	f = open("mynums.txt");
+	f = open(filename);
 	f = readlines(f);
 	c::Int8 = 1
+	total::Int8 = 0
+
 	for line in f
-		println(line)
+		if verbose
+			println("reading line > \"$line\"")
+		end
+
 		intvs = split(line, ",");
 		push!(timeline, Interval[])
 
 		for intv in intvs
 			if length(intv) < 5
+				if verbose
+					print_with_color(:light_black, "    invalid length > ")
+					println("\"$intv\"")
+				end
 				continue
+			end
+
+			if verbose
+				print_with_color(:light_blue, "    possible interval > ")
+				println("\"$intv\"")
 			end
 
 			if intv[end] == ","
@@ -29,12 +44,19 @@ function readTimeline()
 			params = split(strip(intv, [',', '\n']))
 
 			if length(params) != 3
+				if verbose
+					print_with_color(:light_magenta, "        invalid parameter count\n")
+				end
 				continue
 			end
-			
+
 			bad = false
 			for param in params
 				if isnull(tryparse(Int8, param))
+					if verbose
+						print_with_color(:red, "        invalid integer > ")
+						println("\"$param\"")
+					end
 					bad = true
 				end
 			end
@@ -48,22 +70,38 @@ function readTimeline()
 			p3 = parse(Int8, params[3])
 
 			newIntv = Interval(p1,p2,p3)
-			println(newIntv)
+
+			if verbose
+				print_with_color(:green, "        interval > ")
+				println(newIntv)
+				total = total + 1
+			end
 			push!(timeline[c], newIntv)
 		end
 
 		if length(timeline[c]) == 0
+			if verbose
+				print_with_color(:yellow, "no intervals found. Skipping line.\n")
+			end
 			pop!(timeline)
 		else
 			c = c + 1
 		end
+		if verbose
+			println()
+		end
 	end
-	println("end")
+
+	if verbose
+		println("reached end of file.")
+		println("found $total intervals across $(length(timeline)) channels.\n")
+	end
 
 	return timeline::Array{Array{Interval,1},1}
 end
 export readTimeline
 
+# Returns a statically-defined 
 function getTestTimeline()
 	# make timeline array
 	timeline::Array{Array{Interval,1},1} = []

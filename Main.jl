@@ -6,25 +6,28 @@ tic() # start timer
 
 # bring in modules from other files. Order matters.
 include("./PneuCore.jl")
+include("./Visualize.jl")
 include("./Input.jl")
+using PneuCore: Interval, doCycle, writeOut, readChannel
 using Input: readTimeline
-using PneuCore: Interval, doCycle, writeOut
+using Visualize: drawTimeline
 
 println("done!")
 toc() # print timer value
 
-#@time writeOut("Python loaded")
+@time writeOut([])
+@time writeOut("Python loaded")
 println()
 
-# Broken into a function to allow setting type of timeline
 function start()
-	timeline = Input.readTimeline()
-	println(timeline)
+	timeline = Input.readTimeline("mynums.txt", true)
+	Visualize.drawTimeline(timeline)
+	println()
+
 	# choose how long to spend on one cycle, in seconds
 	cycleTime::Float16 = 1
 
-	for a = 1:3
-		# label the output
+	for a = 1:2
 		println("Cycle $a:");
 		# extra time is approximately constant,
 		#  independent of the cycle length.

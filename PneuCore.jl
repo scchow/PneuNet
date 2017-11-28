@@ -30,7 +30,7 @@ function doCycle(timeline::Array{Array{Interval,1},1}, totalTime::Float16)
 		# start row with time stamp
 		print("$currTime\t")
 
-		message::String = ""
+		amplitudes = []
 		
 		# find value of each channel
 		for channel::Int8 = 1:length(timeline)
@@ -38,12 +38,11 @@ function doCycle(timeline::Array{Array{Interval,1},1}, totalTime::Float16)
 			(amp::Int8, currIndex[channel]::Int8) = 
 				readChannel(timeline, channel, currIndex[channel], currTime)
 
-			# stash retreived value for setting later
-			message = message * "$amp "
+			push!(amplitudes, amp)
 		end
 
 		# set all values at once
-		writeOut(message);
+		writeOut(amplitudes);
 
 		sleep(totalTime/STEPS_IN_TIMELINE)
 	end
@@ -85,7 +84,7 @@ function readChannel(timeline::Array{Array{Interval,1},1}, channelID::Int8, curr
 	# after last interval in timeline
 	return (0, currIndex)
 end
-
+export readChannel
 
 # will eventually change PWM pin values through Python function
 function writeOut(value)
