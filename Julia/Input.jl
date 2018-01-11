@@ -19,21 +19,21 @@ function readTimeline(filename::String, verbose::Bool = false)
 		if verbose
 			println("reading line > \"$line\"")
 		end
-
+		
 		intvs = split(line, ",");
 		push!(timeline, Interval[])
 
 		for intv in intvs
 			if length(intv) < 5
 				if verbose
-					print_with_color(:light_black, "    invalid length > ")
+					print("\033[30;1m    invalid length > \033[0m")
 					println("\"$intv\"")
 				end
 				continue
 			end
 
 			if verbose
-				print_with_color(:light_blue, "    possible interval > ")
+				print("\033[36m    possible interval > \033[0m")
 				println("\"$intv\"")
 			end
 
@@ -45,7 +45,7 @@ function readTimeline(filename::String, verbose::Bool = false)
 
 			if length(params) != 3
 				if verbose
-					print_with_color(:light_magenta, "        invalid parameter count\n")
+					print("\033[35;1m        invalid parameter count\033[0m\n")
 				end
 				continue
 			end
@@ -54,7 +54,7 @@ function readTimeline(filename::String, verbose::Bool = false)
 			for param in params
 				if isnull(tryparse(Int8, param))
 					if verbose
-						print_with_color(:red, "        invalid integer > ")
+						print("\033[31m        invalid integer > \033[0m")
 						println("\"$param\"")
 					end
 					bad = true
@@ -72,7 +72,7 @@ function readTimeline(filename::String, verbose::Bool = false)
 			newIntv = Interval(p1,p2,p3)
 
 			if verbose
-				print_with_color(:green, "        interval > ")
+				print("\033[32m        interval > \033[0m")
 				println(newIntv)
 				total = total + 1
 			end
@@ -81,7 +81,7 @@ function readTimeline(filename::String, verbose::Bool = false)
 
 		if length(timeline[c]) == 0
 			if verbose
-				print_with_color(:yellow, "no intervals found. Skipping line.\n")
+				print("\033[33mno intervals found. Skipping line.\033[0m\n")
 			end
 			pop!(timeline)
 		else

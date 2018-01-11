@@ -10,13 +10,12 @@ unshift!(PyVector(pyimport("sys")["path"]), "")
 @pyimport Output
 
 # Make data structure used for each interval in the timeline
-struct Interval
+immutable Interval
 	start::Int8
 	duration::Int8
 	amplitude::Int8
 end
 export Interval
-
 
 # runs through one cycle of the timeline
 function doCycle(timeline::Array{Array{Interval,1},1}, totalTime::Float16)

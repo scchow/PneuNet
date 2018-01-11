@@ -17,7 +17,7 @@ function drawTimeline(timeline::Array{Array{Interval,1},1}, useColor::Bool = tru
 		for currTime::Int8 in 1:STEPS_IN_TIMELINE
 			(amp, currIdx) = readChannel(timeline, channel, currIdx, currTime)
 			if useColor && amp == 0
-				print_with_color(:light_black, "$amp ")
+				print("\033[30;1m$amp \033[0m")
 			else
 				print("$amp ")
 			end

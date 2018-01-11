@@ -1,13 +1,13 @@
 # PneuNet
 
 ## Overview
-This project allows for time-sensitive, repetative, and easily-edited motion definitions of soft robots driven by soft actuators. The philosophy is similar to that of a MIDI tracker, with intetmittent activations on several parallel timelines. This program sets a Raspberry Pi's PWM outputs to match a defined cycle to achieve some gait, grip, or other motion through the control of its PneuNet.
+This project allows for time-sensitive, repetative, and easily-edited motion definitions of soft robots driven by soft actuators. The philosophy is similar to that of a MIDI tracker, with intetmittent activations on several parallel timelines. This program sets a Raspberry Pi's (or Arduino's) PWM outputs to match a defined cycle to achieve some gait, grip, or other motion through the control of its PneuNet.
 
 ## Usage
-Run `Main.jl` with Julia. The `PyCall` Julia package (for interfacing with Python) must be installed first with `Pkg.Add("PyCall")`. Python and its _____ packages must also be installed for Raspberry Pi hardware access.
+Run `pneu_net.py`. If that doesn't work, try typing `python3 pneu_net.py` in a console. If that doesn't work, make sure Python 3.x is installed and added to the `PATH`.
 
 ## PWM Output
-When run on a Raspberry Pi, this program will set the duty cycle of PWM pins as specified in the motion config file. This is the main purpose of this program.
+When run on a Raspberry Pi, this program will set the duty cycle of PWM pins as specified in the motion config file. This is the main purpose of this program. It can also be run with a serial connection to an Arduino to use its PWM pins.
 
 ## Files
 The motion file specifies intervals on channels. Each interval consists of 3 integers: start, duration, and amplitude (in that order). These are separated by spaces. Each interval is separated by a comma. Each channel is a single line of the file. Channels currently cannot be empty, so if a line has no (valid) intervals, the next line is checked for the next channel. Example of standard syntax:
@@ -27,10 +27,10 @@ This example would parse as (1 2 3) (4 5 6) (7 8 9) and ignore the rest.
 
 ## Troubleshooting
 ### Motion Definitions (timelines) seem wrong
-The `Visualize()` function prints a matrix of characters showing the amplitude at each channel at each time. This can help clarify what a timeline has defined. Output is colored.
+The `print_timeline()` function prints a matrix of characters showing the amplitude at each channel at each time. This can help clarify what a timeline has defined. Output is colored.
 
 ### File is not reading correctly
-If you can't figure out why your file is being parsed the way it is, run `readTimeline()` in `Input.jl` with the second argument `verbose::Bool = true` and it will print a detailed walkthrough of its interpretation of the specified file. Output is colored.
+If you can't figure out why your file is being parsed the way it is, run `read_Timeline()` with the second argument `verbose = true` and it will print a detailed walkthrough of its interpretation of the specified file. Output is colored.
 
 ### Colored output doesn't work properly
-Run Julia with `julia --color=yes` to enable proper colorization.
+You must use a console that supports ANSI color escape sequences.

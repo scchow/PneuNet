@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/python
 """
 This module provides access to Python APIs for controlling a Raspberry Pi
     in more complicated ways than Julia can.
