@@ -27,10 +27,10 @@ This example would parse as (1 2 3) (4 5 6) (7 8 9) and ignore the rest.
 
 ## Troubleshooting
 ### Motion Definitions (timelines) seem wrong
-The `print_timeline()` function prints a matrix of characters showing the amplitude at each channel at each time. This can help clarify what a timeline has defined. Output is colored.
+The `print_timeline()` function prints a matrix of characters showing the amplitude at each channel at each time. This can help clarify what a timeline has defined.
 
 ### File is not reading correctly
-If you can't figure out why your file is being parsed the way it is, run `read_Timeline()` with the second argument `verbose = true` and it will print a detailed walkthrough of its interpretation of the specified file. Output is colored.
+If you can't figure out why your file is being parsed the way it is, run `read_Timeline()` with the second argument `verbose = true` and it will print a detailed walkthrough of its interpretation of the specified file.
 
 ### Colored output doesn't work properly
-You must use a console that supports ANSI color escape sequences.
+You must use a console that supports ANSI color escape sequences. This means CMD and Powershell on Windows won't work. Also make sure the `ansicolor` Python package is installed.
