@@ -10,6 +10,7 @@ import sys
 from core import do_cycle
 from visualization import print_timeline
 from parse import read_timeline
+from output import Arduino
 
 def start():
     """
@@ -39,13 +40,23 @@ def start():
     except ValueError:
         exit()
 
+    board = Arduino()
+    print("Connecting...",end='')
+    if board.connect():
+        print("done")
+    else:
+        print("error!")
+        exit()
+
     input("\nPress enter to run {} cycles at {} seconds each...".format(cycle_count, cycle_time))
 
     cycle = 0
     while cycle != cycle_count:
         print("\nCycle {}:".format(cycle + 1))
-        do_cycle(timeline, cycle_time)
+        do_cycle(board, timeline, cycle_time)
         cycle += 1
+
+    board.disconnect()
 
 def get_input(message):
     """

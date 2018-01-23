@@ -16,7 +16,7 @@ Interval = namedtuple("Interval", "start duration amplitude")
 STEPS_IN_TIMELINE = 10
 
 # runs through one cycle of the timeline
-def do_cycle(timeline, total_time):
+def do_cycle(board, timeline, total_time):
     """
     Runs through one cycle of the gait.
         :param timeline: is the 2D array of intervals to read.
@@ -40,7 +40,7 @@ def do_cycle(timeline, total_time):
             amplitudes.append(amp)
 
         # set all values at once
-        write_out(amplitudes)
+        write_out(board, amplitudes)
 
         time.sleep(total_time/STEPS_IN_TIMELINE)
 
@@ -84,9 +84,10 @@ def read_channel(timeline, channel_id, curr_index, curr_time):
     return 0, curr_index
 
 # will eventually change PWM pin values
-def write_out(value):
+def write_out(board, values):
     """
     Prints stuff to the console and writes to Arduino/Pi pins if available.
-        :param value: the stuff to print.
+        :param values: the stuff to print.
     """
-    print(value, sep='')
+    print(values, sep='')
+    board.send(values)
