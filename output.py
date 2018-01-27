@@ -13,10 +13,10 @@ import serial.tools.list_ports
 
 def choose_port():
     """
-        This function returns a valid serial port. If more than one is
-        available, it will ask the user.
+    Returns a valid serial port. If more than one is
+    available, it will ask the user.
 
-            :returns: the port name as a string
+        :returns: the port name as a string
     """
     ports = [comport.device for comport in serial.tools.list_ports.comports()]
 
@@ -38,7 +38,7 @@ def choose_port():
     print("\nMultiple ports are available:")
 
     for num, port in enumerate(open_ports):
-        print("{}\t{}".format(num + 1, port))
+        print(" {}\t{}".format(num + 1, port))
 
     print()
     choice = 0
@@ -61,7 +61,7 @@ class Arduino:
 
     def connect(self, port='', baud=9600):
         """
-        This function starts a new serial connection to an Arduino.
+        Starts a new serial connection to an Arduino.
             :param port: is the port to try to connect with.
             :param baud: is the baudrate to connect with.
         """
@@ -72,14 +72,14 @@ class Arduino:
             return False
 
         try:
-            self.ser = serial.Serial(port, baud)
+            self.ser = serial.Serial(port, baud, timeout=1)
             return True
         except serial.SerialException:
             return False
 
     def disconnect(self):
         """
-        This function closes the serial connection to the Arduino.
+        Closes the serial connection to the Arduino.
         """
         try:
             self.ser.write(b'a')
@@ -90,26 +90,30 @@ class Arduino:
 
     def send_raw(self, message):
         """
-        This function lets you send any string to a connected Arduino.
+        Lets you send any string to a connected Arduino.
             :param message: is the string to send.
         """
         self.ser.write(message.encode(encoding='ascii'))
         self.ser.flush()
+        try:
+            self.ser.read(1)
+        except serial.SerialException:
+            pass
 
     def send(self, amplitudes):
         """
-        This function sends an array of amplitudes to the connected Arduino.
+        Sends an array of amplitudes to the connected Arduino.
             :param amplitudes: is the array to send.
         """
         msg = ''
-        for i, amplitude in enumerate(amplitudes):
-            msg = msg + ' ' + str(i) + ' ' + str(int(amplitude))
+        for amplitude in amplitudes:
+            msg = msg + ' ' + str(int(amplitude))
 
         self.send_raw(msg)
 
     def clear(self):
         """
-        This function sends the "abort" command to the connected Arduino,
+        Sends the "abort" command to the connected Arduino,
         which shuts off all outputs.
         """
         self.send_raw('a')

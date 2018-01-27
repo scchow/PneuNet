@@ -31,7 +31,6 @@ def print_timeline(timeline):
         print() # newline
     print() # newline
 
-
 def interval_to_string(interval):
     """
     Returns a string representation of an interval.
@@ -43,3 +42,10 @@ def interval_to_string(interval):
     bracket_nums = black("[", bold=True) + nums + black("]", bold=True)
 
     return bracket_nums
+
+def add_quotes(message):
+    """
+    Adds grey quotes around text.
+        :param message: is the string to put quotes around.
+    """
+    return black("\"", bold=True) + str(message) + black("\"", bold=True)

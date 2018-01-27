@@ -3,7 +3,8 @@
     Author: Gabriel Kulp
     Created: 1/19/2017
 
-    This module holds global variables and the functions most fundamental to this program.
+    This module holds global variables and the functions
+    most fundamental to this program.
 """
 
 import time

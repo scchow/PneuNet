@@ -10,7 +10,7 @@ from pathlib import Path
 from ansicolor import red, green, blue, yellow, black, magenta, white
 # install package by typing: pip install ansicolor
 from core import Interval
-from visualization import interval_to_string
+from visualization import interval_to_string, add_quotes
 
 # reads timeline from file. Check README.md for more details.
 def read_timeline(filename, verbose=False):
@@ -25,8 +25,8 @@ def read_timeline(filename, verbose=False):
 
     count, total = 0, 0
 
-    gait_file = Path(filename)
-    if not gait_file.is_file():
+    # Yes, this is the second part where this is checked. Gotta be sure.
+    if not file_exists(filename):
         if verbose:
             print(add_quotes(filename), "is not a file")
         return False
@@ -77,8 +77,13 @@ def read_timeline(filename, verbose=False):
 
     return timeline
 
-def add_quotes(message):
-    return black("\"", bold=True) + str(message) + black("\"", bold=True)
+def file_exists(filename):
+    """
+    Returns true if the filepath exists and is a file (not a folder).
+        :param filename: is the file to look for
+    """
+    file = Path(filename)
+    return file.is_file()
 
 def parse_check_format(intv, verbose=False):
     """

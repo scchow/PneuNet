@@ -17,42 +17,64 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 }
 
+void abort_all() {
+    for (int i = 0; i < PIN_COUNT; i++)
+      digitalWrite(PINS[i], 0);
+
+    flush_input();
+
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(500);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(500);
+}
+
+void flush_input() {
+  while (Serial.read() != -1) {}
+}
+
 void loop() {
   if (Serial.available()) {
-
-    // abort
-    if (Serial.peek() == 'a') {
-      for (int i = 0; i < PIN_COUNT; i++)
-        digitalWrite(PINS[i], 0);
-
-      // flush out anything else
-      while (Serial.read() != -1) {}
-
-      digitalWrite(LED_BUILTIN, HIGH);
-      delay(500);
-      digitalWrite(LED_BUILTIN, LOW);
-      delay(500);
-      
-      return;
-    }
-
+    
+    pin = 0;
+    
     // if not abort, must be pin commands
     while (Serial.available()) {
-      // pin ID comes first
-      pin = Serial.parseInt();
-  
-      // values must come in pairs. No pair = ignore
-      if (Serial.peek() == -1)
-        return;
       
-      // if there's a second value, set the pin with it
+      // if 'a' is ever received, abort
+      if (Serial.peek() == 'a') {
+        abort_all();
+        return;
+      }
+
+      // end of stream check
+      if (Serial.peek() == -1)
+        break;
+        
+      // if there's a value, set the pin with it
       amplitude = Serial.parseInt();
-      if (pin < PIN_COUNT)
-        analogWrite(PINS[pin], amplitude);
-  
-      // no need to flush input buffer, since multiple
-      // commands can come at the same time.
+        
+      analogWrite(PINS[pin], amplitude);
+
+      // no need to flush input buffer, since the
+      // next numbers are still in there.
+      
+      pin = pin + 1;
+      
+      // too many commands. ignore extras.
+      if (pin >= PIN_COUNT)
+        break;
     }
+
+    //others are 0.
+    for (int i = pin; i < PIN_COUNT; i++) {
+      analogWrite(PINS[i], 0);
+    }
+
+    // send a 'received' acknowledgement if new pin data acquired
+    //delay(600); // to test checking for acknowledgement
+    Serial.write('r');
+    Serial.flush();
     
   } else {
     // fast blink status light while waiting
