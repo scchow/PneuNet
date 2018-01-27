@@ -1,5 +1,5 @@
-const int PIN_COUNT = 5;
-const int PINS[] = {3, 5, 6, 9, 11};
+const int PIN_COUNT = 6;
+const int PINS[] = {3, 5, 6, 9, 10, 11};
 
 // pre-allocate
 int pin;

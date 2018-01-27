@@ -14,13 +14,17 @@ Interval = namedtuple("Interval", "start duration amplitude")
 
 # Global setting for time granularity
 STEPS_IN_TIMELINE = 10
+# Global setting for amplitude granularity
+STEPS_IN_AMPLITUDE = 10
 
 # runs through one cycle of the timeline
-def do_cycle(board, timeline, total_time):
+def do_cycle(device, timeline, total_time, multiplier):
     """
     Runs through one cycle of the gait.
+        :param device: is the output device
         :param timeline: is the 2D array of intervals to read.
         :param total_time: is the time it should take to complete the cycle.
+        :param multiplier: is the maximum amplitude outputted.
     """
 
     # set the index on each channel to 0
@@ -40,7 +44,7 @@ def do_cycle(board, timeline, total_time):
             amplitudes.append(amp)
 
         # set all values at once
-        write_out(board, amplitudes)
+        write_out(device, amplitudes, multiplier)
 
         time.sleep(total_time/STEPS_IN_TIMELINE)
 
@@ -84,10 +88,14 @@ def read_channel(timeline, channel_id, curr_index, curr_time):
     return 0, curr_index
 
 # will eventually change PWM pin values
-def write_out(board, values):
+def write_out(device, values, multiplier):
     """
-    Prints stuff to the console and writes to Arduino/Pi pins if available.
+    Prints stuff to the console and writes to device pins if available.
+        :param device: is the device to output to.
         :param values: the stuff to print.
+        :param multiplier: scales the output values, but only to the device. Unscaled
+            numbers are printed to the screen.
     """
-    print(values, sep='')
-    board.send(values)
+    print(values)
+    scaled_values = [i * multiplier * 255 / STEPS_IN_AMPLITUDE for i in values]
+    device.send(scaled_values)
