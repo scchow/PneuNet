@@ -1,0 +1,8 @@
+# This file demonstrates good syntax.
+
+0 2 2, 4 1 6, 8 2 8
+2 4 3, 7 3 5
+
+# look, a line comment!
+0 2 2, 4 1 6 # an in-line comment
+0 2 2, 4 1 6, 8 2 8

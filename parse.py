@@ -15,7 +15,7 @@ from visualization import interval_to_string, add_quotes
 # reads timeline from file. Check README.md for more details.
 def read_timeline(filename, verbose=False):
     """
-    Reads a timeline of intervals from a text file.
+    Reads a timeline of intervals from a text file. Returns the timeline and if there are errors.
         :param filename: is the path to the timeline file.
         :param verbose: is an optional flag.
             When true, extra parsing information is printed to the console. Defaults to false.
@@ -31,30 +31,64 @@ def read_timeline(filename, verbose=False):
             print(add_quotes(filename), "is not a file")
         return False
 
+    errors = False
+
     with open(filename) as lines:
         for num, line in enumerate(lines):
             line = line.strip()
             if verbose:
-                print("reading line {} >".format(num), add_quotes(line))
+                print("reading line {} >".format(num + 1), add_quotes(line))
+
+            if not line:
+                if verbose:
+                    print(black("Skipping blank line\n", bold=True))
+                continue
+
+            if line.startswith("#"):
+                if verbose:
+                    print(black("Skipping comment line\n", bold=True))
+                continue
+
+            comment_pos = line.find("#")
+            if comment_pos != -1:
+                if verbose:
+                    print(black("\tRemoving comment > ", bold=True), end='')
+                    print(add_quotes(line[comment_pos:]))
+                    print(black("\tParsing remaining line > ", bold=True), end='')
+                    print(add_quotes(line[:comment_pos]))
+                line = line[:comment_pos]
 
             intvs = line.split(",")
             timeline.append([])
 
             for intv in intvs:
+
+                comment_pos = intv.find("#")
+                if comment_pos != -1:
+                    if verbose:
+                        print(black("\tFound comment in segment >", bold=True), add_quotes(intv))
+                        print(black("\t\tRemoving comment > ", bold=True), end='')
+                        print(add_quotes(intv[comment_pos:]))
+                        print(black("\t\tRemaining segment > ", bold=True), end='')
+                        print(add_quotes(intv[:comment_pos]))
+                    intv = intv[:comment_pos]
+
                 intv = intv.strip()
 
                 if not parse_check_format(intv, verbose):
+                    errors = True
                     continue
 
                 params = intv.split()
 
                 if not parse_check_numbers(params, verbose):
+                    errors = True
                     continue
 
                 new_interval = Interval(int(params[0]), int(params[1]), int(params[2]))
 
                 if verbose:
-                    print(green("        interval >"), interval_to_string(new_interval))
+                    print(green("\t\tinterval >"), interval_to_string(new_interval))
 
                 total = total + 1
                 timeline[count].append(new_interval)
@@ -75,7 +109,7 @@ def read_timeline(filename, verbose=False):
         print("reached end of file.")
         print("found {} intervals across {} channels.".format(total, len(timeline)))
 
-    return timeline
+    return timeline, errors
 
 def file_exists(filename):
     """
@@ -96,12 +130,12 @@ def parse_check_format(intv, verbose=False):
     """
     if len(intv) < 5:
         if verbose:
-            print(black("    invalid length > ", bold=True), end='')
+            print(black("\tinvalid length > ", bold=True), end='')
             print(add_quotes(intv))
         return False
 
     if verbose:
-        print(blue("    possible interval > ", bold=True), end='')
+        print(blue("\tpossible interval > ", bold=True), end='')
         print(add_quotes(intv))
     return True
 
@@ -117,7 +151,7 @@ def parse_check_numbers(params, verbose=False):
 
     if len(params) != 3:
         if verbose:
-            print(magenta("        invalid parameter count:"), len(params))
+            print(magenta("\t\tinvalid parameter count:"), len(params))
         return False
 
     for param in params:
@@ -125,13 +159,13 @@ def parse_check_numbers(params, verbose=False):
             num = int(param, 10) # 10 is the number base
         except ValueError:
             if verbose:
-                print(red("        invalid integer > "), end='')
+                print(red("\t\tinvalid integer > "), end='')
                 print(add_quotes(param))
             return False
         else:
             if num < 0:
                 if verbose:
-                    print(red("        invalid integer range > "), end='')
+                    print(red("\t\tinvalid integer range > "), end='')
                     print(add_quotes(param))
                 return False
     return True
@@ -165,4 +199,3 @@ def get_test_timeline():
     timeline[2].append(Interval(6, 2, 9))
 
     return timeline
-

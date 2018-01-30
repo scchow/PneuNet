@@ -22,6 +22,8 @@ def choose_port():
 
     open_ports = []
     for port in ports:
+        if port.find("AMA") != -1:
+             continue
         try:
             ser = serial.Serial(port)
             ser.close()

@@ -17,6 +17,8 @@ Interval = namedtuple("Interval", "start duration amplitude")
 STEPS_IN_TIMELINE = 10
 # Global setting for amplitude granularity
 STEPS_IN_AMPLITUDE = 10
+# Global setting for minimum duty cycle
+MIN_DUTY_CYCLE = 200
 
 # runs through one cycle of the timeline
 def do_cycle(device, timeline, total_time, multiplier):
@@ -98,5 +100,10 @@ def write_out(device, values, multiplier):
             numbers are printed to the screen.
     """
     print(values)
-    scaled_values = [i * multiplier * 255 / STEPS_IN_AMPLITUDE for i in values]
+    scaled_values = []
+    for value in values:
+        value = value * multiplier * (255 - MIN_DUTY_CYCLE) / STEPS_IN_TIMELINE
+        if value != 0:
+            value = value + MIN_DUTY_CYCLE
+        scaled_values.append(value)
     device.send(scaled_values)

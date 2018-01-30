@@ -21,27 +21,33 @@ def start():
     """
 
     filename, timeline, cycle_time, multiplier = handle_argv()
+    # Note that this is where the program sits while the visualizer is running
 
+    if not timeline:
+        print("File not specified.")
     while not timeline:
-        timeline, filename = choose_timeline()
+        timeline, filename = choose_timeline(verbose=False)
 
     if not cycle_time:
+        print("Cycle time not specified.")
         cycle_time = choose_cycle_time()
 
     if not multiplier:
+        print("Multiplier not specified.")
         multiplier = choose_multiplier()
 
     execute_gaits(filename, timeline, cycle_time, multiplier)
 
     while True:
         print("\n\nWhat next?\n")
-        print(" 1\tRun again with the same settings")
-        print(" 2\tChange the amplitude multiplier")
-        print(" 3\tChange the cycle speed")
+        print(" 1\tRun again with the same settings ({})".format(filename))
+        print(" 2\tChange the amplitude multiplier then run ({})".format(multiplier))
+        print(" 3\tChange the cycle speed then run ({})".format(cycle_time))
         print(" 4\tOpen a new file")
-        print(" 5\tQuit\n")
+        print(" 5\tSwitch to editor/visualizer mode for this file")
+        print(" 6\tQuit\n")
 
-        menu = input("(1-5) ").strip()
+        menu = input("(1-6) ").strip()
         if menu == '1':
             execute_gaits(filename, timeline, cycle_time, multiplier)
             continue
@@ -56,14 +62,12 @@ def start():
             execute_gaits(filename, timeline, cycle_time, multiplier)
             continue
         elif menu == '4':
-            timeline, filename = choose_timeline()
-            if not timeline:
-                continue
-            cycle_time = choose_cycle_time()
-            multiplier = choose_multiplier()
-            execute_gaits(filename, timeline, cycle_time, multiplier)
+            timeline, filename = choose_timeline(verbose=False)
             continue
         elif menu == '5':
+            filename, timeline = start_visualizer(filename)
+            continue
+        elif menu == '6':
             exit()
         else:
             print("Invalid option. Try again.")
@@ -73,6 +77,14 @@ def handle_argv():
     """
     Parses command-line input stored in sys.argv
     """
+
+    if len(sys.argv) >= 2:
+        if sys.argv[1] == "-e":
+            if len(sys.argv) > 3:
+                print("Invalid editor/visualizer syntax. Use -e [filename]\n")
+                input("Press enter to ignore...")
+            filename, timeline = start_visualizer(sys.argv[2] if len(sys.argv) >= 3 else None)
+            return filename, timeline, None, None
 
     filename, timeline, cycle_time, multiplier = None, None, None, None
     bad_input = False
@@ -93,32 +105,78 @@ def handle_argv():
         bad_input = True
 
     if bad_input:
-        print("Argument error. Format is [filename] [cycle time] [multiplier]")
+        print("Argument error. Format is [filename] [cycle_time multiplier]")
+        print("or, for editor/visualizer mode, -e [filename]\n")
         return None, None, None, None
-    else:
-        return filename, timeline, cycle_time, multiplier
+    return filename, timeline, cycle_time, multiplier
 
-def choose_timeline(filename=None):
+def start_visualizer(filename=None):
+    """
+    Kicks off the editor/visualizer. Returns the file you where
+    editing/viewing when the user presses Ctrl+C
+        :param filename: is an optional parameter. When specified,
+            this file is viewed. When not, the user will be prompted.
+    """
+    try:
+        print("Choose a file to edit/visualize:")
+        while True:
+            timeline, filename = choose_timeline(filename, verbose=True)
+
+            if not timeline:
+                print("file not found: {}".format(add_quotes(filename)))
+                continue
+
+            print("Finished reading file: {}\n".format(add_quotes(filename)))
+            print("Press enter to reload, Ctrl+C to switch to run mode,")
+            usr = input("type o to view a different file, or type q to quit: ").strip().lower()
+            
+            if usr == 'o':
+                filename = None
+            elif usr == 'q':
+                print("\nexiting...")
+                exit()
+            else:
+                os.system('cls' if os.name == 'nt' else 'clear')
+
+    except KeyboardInterrupt:
+        pass
+    print("\n")
+    return filename, timeline
+
+def choose_timeline(filename=None, folder="gaits", verbose=None):
     """
     Returns a timeline from a file.
         :param filename: is an optional argument. When specified,
             this is the file used. When not, the user is prompted.
+        :param folder: is an optional argument. When specified, this
+            folder is searched for gait and txt files.
+        :param verbose: is an optional argument. When not None,
+            the user will not be asked about verbosity and this
+            value will be used.
     """
 
     if not filename:
-        filename = choose_file()
+        filename = choose_file(folder)
         if not filename:
-            print("No valid gait files in current directory.")
-            print("Make sure they have the .txt or .gait extension.")
+            if verbose is None:
+                print("No valid gait files in current directory.")
+                print("Make sure they have the .txt or .gait extension.")
             exit()
 
-    verbose = input("Show extra parsing info? (y/N): ").strip().lower()
-    verbose = (verbose == "y" or verbose == "yes")
+    if verbose is None:
+        verbose = input("Show extra parsing info? (y/N): ").strip().lower()
+        verbose = (verbose == "y" or verbose == "yes")
 
-    timeline = read_timeline(filename, verbose)
+    timeline, errors = read_timeline(filename, verbose)
+
+    if errors:
+        print("finished parsing with errors")
+    if verbose and not errors:
+        print("finished parsing with no errors")
 
     if not timeline:
-        print("Timeline is empty. There is nothing to do.")
+        if verbose is None:
+            print("Timeline is empty. There is nothing to do.")
         return None, None
 
     print_timeline(timeline)
@@ -137,36 +195,46 @@ def choose_multiplier():
     """
     return get_positive_float("Amplitude multiplier: ")
 
-def choose_file():
+def choose_file(folder):
     """
     Returns a valid filename. If more than one is available in the folder,
     it will ask the user. If no files are available, returns None.
+        :param folder: is the folder to look in. Must be at the same
+            directory level as this script file. No need for ./ at the start.
     """
     files = []
-    for file in os.listdir("."):
+    for file in os.listdir(folder):
         if file.endswith((".txt", ".gait")):
             files.append(file)
 
     if not files:
         return None
 
-    if len(files) == 1:
-        return files[0]
-
-    print("\nMultiple files are available:")
+    print("\nPlease select a file from the {} folder:".format(folder))
 
     for num, file in enumerate(files):
         print(" {}\t{}".format(num + 1, file))
 
-    print()
+    print(" {}\t[Manually specify]\n".format(len(files) + 1))
+
     choice = 0
-    while choice > len(files) or choice < 1:
+    while choice > len(files) + 1 or choice < 1:
         try:
-            choice = int(input("which file? (1-{}): ".format(len(files))))
+            choice = int(input("which file? (1-{}): ".format(len(files) + 1)))
         except ValueError:
             pass
 
-    return files[choice - 1]
+    if choice == len(files) + 1:
+        valid = False
+        while not valid:
+            file = input("File path: ")
+            valid = os.path.isfile(file)
+            if not valid:
+                print("{} does not exist".format(file))
+        return file
+
+
+    return "{}/{}".format(folder, files[choice - 1])
 
 def execute_gaits(filename, timeline, cycle_time, multiplier):
     """
@@ -187,7 +255,7 @@ def execute_gaits(filename, timeline, cycle_time, multiplier):
     print("\nReading from", add_quotes(filename))
     print("Cycle time is", cycle_time, end='')
     print(", multiplier is", int(multiplier * 100), end='')
-    input("%. Press enter to start...")
+    input("%. Press enter to start and Ctrl-C to stop.")
     start_time = time.time()
 
     try:
@@ -216,4 +284,7 @@ def get_positive_float(message):
         if value >= 0:
             return value
 
-start()
+try:
+    start()
+except KeyboardInterrupt:
+    print("\nForce quit")
