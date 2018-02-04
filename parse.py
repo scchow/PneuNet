@@ -49,6 +49,7 @@ def read_timeline(filename, verbose=False):
                     print(black("Skipping comment line\n", bold=True))
                 continue
 
+            # if you find the comment symbol, ignore everything after it
             comment_pos = line.find("#")
             if comment_pos != -1:
                 if verbose:
@@ -63,28 +64,21 @@ def read_timeline(filename, verbose=False):
 
             for intv in intvs:
 
-                comment_pos = intv.find("#")
-                if comment_pos != -1:
-                    if verbose:
-                        print(black("\tFound comment in segment >", bold=True), add_quotes(intv))
-                        print(black("\t\tRemoving comment > ", bold=True), end='')
-                        print(add_quotes(intv[comment_pos:]))
-                        print(black("\t\tRemaining segment > ", bold=True), end='')
-                        print(add_quotes(intv[:comment_pos]))
-                    intv = intv[:comment_pos]
-
                 intv = intv.strip()
 
+                # see if it's in the form [#] [#] [#]
                 if not parse_check_format(intv, verbose):
                     errors = True
                     continue
 
                 params = intv.split()
 
+                # check that each number is legit
                 if not parse_check_numbers(params, verbose):
                     errors = True
                     continue
 
+                # use those valid numbers to make an interval
                 new_interval = Interval(int(params[0]), int(params[1]), int(params[2]))
 
                 if verbose:
@@ -93,6 +87,7 @@ def read_timeline(filename, verbose=False):
                 total = total + 1
                 timeline[count].append(new_interval)
 
+            # if it's run through the line and not added any intervals...
             if not timeline[count]:
                 if verbose:
                     print(yellow("no intervals found. Skipping line."))
@@ -128,12 +123,15 @@ def parse_check_format(intv, verbose=False):
         :param verbose: is an optional flag.
             When true, extra parsing information is printed to the console. Defaults to false.
     """
+    # if the string is shorter than 5 characters, it can't be [#] [#] [#], since that's
+    # 3 numbers + 2 spaces. if it is less than 5, it's not an interval
     if len(intv) < 5:
         if verbose:
             print(black("\tinvalid length > ", bold=True), end='')
             print(add_quotes(intv))
         return False
 
+    # haven't ruled it out yet
     if verbose:
         print(blue("\tpossible interval > ", bold=True), end='')
         print(add_quotes(intv))
@@ -149,20 +147,24 @@ def parse_check_numbers(params, verbose=False):
             When true, extra parsing information is printed to the console. Defaults to false.
     """
 
+    # make sure it's a set of 3 numbers
     if len(params) != 3:
         if verbose:
             print(magenta("\t\tinvalid parameter count:"), len(params))
         return False
 
+    # make sure each of the 3 numbers is good
     for param in params:
         try:
             num = int(param, 10) # 10 is the number base
+        # catch parsing errors
         except ValueError:
             if verbose:
                 print(red("\t\tinvalid integer > "), end='')
                 print(add_quotes(param))
             return False
         else:
+            # int() allows negatives, but we don't want those
             if num < 0:
                 if verbose:
                     print(red("\t\tinvalid integer range > "), end='')
