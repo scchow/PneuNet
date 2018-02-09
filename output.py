@@ -5,6 +5,8 @@
 
     This module is the entry point. It's the only one that
     executes code on its own or interacts with the user directly.
+
+    ***This is the edited version to use the old Arduino code***
 """
 
 import platform
@@ -84,6 +86,7 @@ class Arduino:
 
         try:
             self.ser = serial.Serial(port, baud, timeout=1)
+            self.send_raw('y')
             return True
         # catch anything that could go wrong with serial
         except serial.SerialException:
@@ -108,10 +111,15 @@ class Arduino:
         """
         # Python3 encodes strings in Unicode, but the Arduino is expecting ASCII
         self.ser.write(message.encode(encoding='ascii'))
+        #print(message)
         # .write() just places the text in a buffer. .flush() actually sends it
         self.ser.flush()
         try:
-            self.ser.read(1)
+            count = 0
+            #while count < 4:
+                #reply = self.ser.readline()
+                #print(reply)
+                #count+=1
         except serial.SerialException:
             pass
 
@@ -121,15 +129,23 @@ class Arduino:
             :param amplitudes: is the array to send.
         """
         # turn the list into a single string
-        msg = ''
+        #self.send_raw('y')
+        msg = 'v '
+        count = 0
         for amplitude in amplitudes:
-            msg = msg + ' ' + str(int(amplitude))
+            count+=1
+            #msg = msg + ' ' + str(int(amplitude * 100 / 255))
+            msg = msg + str(int(amplitude))
+            if count < len(amplitudes):
+                msg = msg + ' '
 
         self.send_raw(msg)
+        self.send_raw('y')
 
     def clear(self):
         """
         Sends the "abort" command to the connected Arduino,
         which shuts off all outputs.
         """
-        self.send_raw('a')
+        self.send([0,0,0,0])
+

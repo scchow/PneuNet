@@ -14,11 +14,11 @@ from collections import namedtuple
 Interval = namedtuple("Interval", "start duration amplitude")
 
 # Global setting for time granularity
-STEPS_IN_TIMELINE = 10
+STEPS_IN_TIMELINE = 4
 # Global setting for amplitude granularity
 STEPS_IN_AMPLITUDE = 10
-# Global setting for minimum duty cycle
-MIN_DUTY_CYCLE = 200
+# Global setting for output device granularity
+STEPS_IN_OUTPUT = 100
 
 # runs through one cycle of the timeline
 def do_cycle(device, timeline, total_time, multiplier):
@@ -100,12 +100,8 @@ def write_out(device, values, multiplier):
     """
     print(values)
     scaled_values = []
-    # re-scales data from 0-10 to 0-255. also ensures duty cycle is above the activation
-    # threshold of our pneumatic actuators
+    # re-scales data from internal representation to external input representation.
     for value in values:
-        value = value * multiplier * (255 - MIN_DUTY_CYCLE) / STEPS_IN_TIMELINE
-        # we want 0 to be below the threshold, so don't change it
-        if value != 0:
-            value = value + MIN_DUTY_CYCLE
+        value = float(value) * float(multiplier) * float(STEPS_IN_OUTPUT) / float(STEPS_IN_TIMELINE)
         scaled_values.append(value)
     device.send(scaled_values)
