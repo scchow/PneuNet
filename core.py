@@ -14,11 +14,9 @@ from collections import namedtuple
 Interval = namedtuple("Interval", "start duration amplitude")
 
 # Global setting for time granularity
-STEPS_IN_TIMELINE = 4
+STEPS_IN_TIMELINE = 32
 # Global setting for amplitude granularity
 STEPS_IN_AMPLITUDE = 10
-# Global setting for output device granularity
-STEPS_IN_OUTPUT = 100
 
 # runs through one cycle of the timeline
 def do_cycle(device, timeline, total_time, multiplier):
@@ -29,27 +27,29 @@ def do_cycle(device, timeline, total_time, multiplier):
         :param total_time: is the time it should take to complete the cycle.
         :param multiplier: is the maximum amplitude outputted.
     """
-
     # set the index on each channel to 0
     curr_index = [0] * len(timeline)
 
     # run through timeline
-    for curr_time in range(0, STEPS_IN_TIMELINE):
+    for curr_step in range(0, STEPS_IN_TIMELINE):
+        step_start_time = time.time()
         # start row with time stamp
-        print(curr_time, "\t", sep='', end='')
+        print(curr_step, "\t", sep='', end='')
 
         amplitudes = []
 
         # find value of each channel
         for chan in range(0, len(timeline)):
             # return value and update channel's current index
-            amp, curr_index[chan] = read_channel(timeline, chan, curr_index[chan], curr_time)
+            amp, curr_index[chan] = read_channel(timeline, chan, curr_index[chan], curr_step)
             amplitudes.append(amp)
 
         # set all values at once
         write_out(device, amplitudes, multiplier)
 
-        time.sleep(total_time/STEPS_IN_TIMELINE)
+        sleep_time = (total_time/STEPS_IN_TIMELINE) - (time.time() - step_start_time)
+        if sleep_time > 0:
+            time.sleep(sleep_time)
 
 
 # return value on the selected channel given the time
@@ -102,6 +102,6 @@ def write_out(device, values, multiplier):
     scaled_values = []
     # re-scales data from internal representation to external input representation.
     for value in values:
-        value = float(value) * float(multiplier) * float(STEPS_IN_OUTPUT) / float(STEPS_IN_TIMELINE)
+        value = float(value) * float(multiplier) / float(STEPS_IN_TIMELINE)
         scaled_values.append(value)
     device.send(scaled_values)

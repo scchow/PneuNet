@@ -9,143 +9,63 @@
     ***This is the edited version to use the old Arduino code***
 """
 
-import platform
-import serial
-import serial.tools.list_ports
+import Adafruit_PCA9685
 
-def choose_port():
+# Global setting for maximum output amplitue
+OUTPUT_SCALE = 2048
+# Global setting for PWM output frequency
+OUTPUT_FREQUENCY = 30
+# Global setting for number of consecutive-addressed chained boards
+BOARD_COUNT = 2
+
+class PWM_board:
     """
-    Returns a valid serial port. If more than one is
-    available, it will ask the user.
-
-        :returns: the port name as a string
-    """
-    # get a list of all the serial ports. COM* in Windows, /dev/tty* otherwise
-    ports = [comport.device for comport in serial.tools.list_ports.comports()]
-
-    # attempt to connect to each of them. if successful, add to list of valid
-    open_ports = []
-    for port in ports:
-        # on RasPi 3, /dev/ttyAMA0 is used for bluetooth. don't touch.
-        if port.find("AMA") != -1:
-             continue
-        try:
-            # test by opening and closing and checking for errors
-            ser = serial.Serial(port)
-            ser.close()
-            open_ports.append(port)
-        except serial.SerialException:
-            pass
-
-    # if there are no valid ports available...
-    if not open_ports:
-        return False
-
-    # if there's just one option, don't ask the user.
-    if len(open_ports) == 1:
-        return open_ports[0]
-
-    print("\nMultiple ports are available:")
-
-    # print list of options
-    for num, port in enumerate(open_ports):
-        print(" {}\t{}".format(num + 1, port))
-
-    print()
-    # get user input on which they choose
-    choice = 0
-    while choice > len(open_ports) or choice < 1:
-        try:
-            choice = int(input("Which port? (1-{}) ".format(len(open_ports))))
-        except ValueError:
-            pass
-
-    return open_ports[choice - 1]
-
-
-class Arduino:
-    """
-    Gives access to an Arduino over serial.
+    Gives access to PWM breakout boards over I2C.
     """
 
-    # setting to None allows declaration of an Arduino without connecting to it
+    # setting to [] allows declaration of an Arduino without connecting to it
     def __init__(self):
-        self.ser = None
+        self.boards = []
 
-    def connect(self, port='', baud=9600):
+    def connect(self):
         """
-        Starts a new serial connection to an Arduino.
-            :param port: is the port to try to connect with.
-            :param baud: is the baudrate to connect with.
+        Starts a new connection to I2C boards. Assumes addresses start at 0x040 and increment
         """
-        if port == '':
-            port = choose_port()
-
-        if not port:
-            return False
-
-        try:
-            self.ser = serial.Serial(port, baud, timeout=1)
-            self.send_raw('y')
-            return True
-        # catch anything that could go wrong with serial
-        except serial.SerialException:
-            return False
+        for x in range(0, BOARD_COUNT):
+            try:
+                self.boards.append(Adafruit_PCA9685.PCA9685(address=0x040 + x))
+                self.boards[x].set_pwm_freq(OUTPUT_FREQUENCY)
+            # catch connection failures
+            except:
+                return False
+        return True
 
     def disconnect(self):
         """
-        Closes the serial connection to the Arduino.
+        Sends zeros and deletes boards
         """
         # try to send abort command. if it fails, move on
         try:
-            self.ser.write(b'a')
-        except serial.SerialException:
+            self.clear()
+        except:
             pass
-        self.ser.close()
+        self.boards = []
         return True
-
-    def send_raw(self, message):
-        """
-        Lets you send any string to a connected Arduino.
-            :param message: is the string to send.
-        """
-        # Python3 encodes strings in Unicode, but the Arduino is expecting ASCII
-        self.ser.write(message.encode(encoding='ascii'))
-        #print(message)
-        # .write() just places the text in a buffer. .flush() actually sends it
-        self.ser.flush()
-        try:
-            count = 0
-            #while count < 4:
-                #reply = self.ser.readline()
-                #print(reply)
-                #count+=1
-        except serial.SerialException:
-            pass
 
     def send(self, amplitudes):
         """
-        Sends an array of amplitudes to the connected Arduino.
+        Sends an array of amplitudes to the connected devices.
             :param amplitudes: is the array to send.
         """
-        # turn the list into a single string
-        #self.send_raw('y')
-        msg = 'v '
-        count = 0
-        for amplitude in amplitudes:
-            count+=1
-            #msg = msg + ' ' + str(int(amplitude * 100 / 255))
-            msg = msg + str(int(amplitude))
-            if count < len(amplitudes):
-                msg = msg + ' '
-
-        self.send_raw(msg)
-        self.send_raw('y')
+        for num, amplitude in enumerate(amplitudes):
+            channel = num % 16
+            board = (num - channel) // 16
+            self.boards[int(board)].set_pwm(int(channel), 0, int(amplitude * OUTPUT_SCALE))
 
     def clear(self):
         """
-        Sends the "abort" command to the connected Arduino,
-        which shuts off all outputs.
+        Shuts off all outputs.
         """
-        self.send([0,0,0,0])
-
+        for board in self.boards:
+            for num in range(0,16):
+                board.set_pwm(num, 0, 0)

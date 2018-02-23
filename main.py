@@ -12,7 +12,7 @@ import time
 from core import do_cycle
 from visualization import print_timeline, add_quotes
 from parse import read_timeline
-from output import Arduino
+from output import PWM_board
 
 def start():
     """
@@ -257,7 +257,7 @@ def execute_gaits(filename, timeline, cycle_time, multiplier):
         :param cycle_time: is how long each cycle takes.
         :param multiplier: is what to multipy amplitudes by.
     """
-    board = Arduino()
+    board = PWM_board()
     print("Attempting to connect...")
     if board.connect():
         print("Connected!")
