@@ -1,60 +1,76 @@
 # PneuNet
 
 ## Overview
-This project allows for time-sensitive, repetitive, and easily-edited motion definitions of soft robots driven by soft actuators. The philosophy is similar to that of a MIDI tracker, with intermittent activations on several parallel timelines. This program sets an Arduino's PWM outputs to match a defined cycle to achieve some gait, grip, or other motion through the control of its PneuNet.
+This project allows for time-sensitive, repetitive, and easily-edited motion definitions for soft robots driven by soft actuators. The philosophy is like that of Guitar Hero or a MIDI tracker, with intermittent activations on several parallel timelines. This program sets the PWM outputs of an Adafruit PCA9685 to match a defined cycle to achieve some gait, grip, or other motion through the control of its PneuNet.
 
 ## Usage
-Run `main.py`. If that doesn't work, try typing `python3 ./main.py` in a console. If that doesn't work, make sure Python 3.x is installed and added to the `PATH`. If you get an error when connecting, try running as admin or with sudo. To read in any file directly, specify the path (relative or absolute) as a command line argument:
+Run `main.py`. If that doesn't work, try typing `python3 ./main.py` in a console. If that doesn't work, make sure Python 3.x is installed and added to the `PATH`. If you get an error when connecting, try running as admin or with sudo.
 
-	sudo ./main.py ./gait_file.abc
+### Command line arguments
+Command line arguments are optional but may improve workflow. The user will be prompted to enter any information that was not provided in the arguments, so the program retains full functionality without them. Run with the `-h` parameter to view a brief help page.
 
-This will run the program with that gait file until the user specifies that they want to use a different file. Similarly, you can specify both the cycle time and the amplitude multiplier after the filename to reduce interaction:
+To read any file directly, specify the path (relative or absolute) as the first argument:
 
-	sudo ./main.py ../gait_file.abc 15 0.8
+	./main.py ./gaits/file.gait
 
-To enter the editor/visualizer mode directly, pass `-e`:
+This will start the program with that gait file selected. The user can still open a different file from within the program; this only changes the initial state. Similarly, you can specify both the cycle time and the amplitude multiplier (in that order) after the filename to reduce initial interaction:
 
-	./main.py -e [../gait_file.abs]
+	./main.py ./gaits/file.gait 15 0.8
 
-You can optionally specify a gait file after. If none is specified, the user will be prompted to choose as normal.
+To enter the editor/visualizer mode directly, pass `-e`, optionally followed by a filename:
 
-## PWM Output
-This program will set the duty cycle of Arduino Mega 2560 PWM pins as specified in the motion config file. This is the main purpose of this program. See the "Arduino" section for details on the protocol used for the serial connection.
+	./main.py -e [./gaits/file.gait]
+
+This again only sets the initial state, so the program can open other files, switch to run mode, etc. after starting in the editor/visualizer mode.
 
 ## Editor/Visualizer Mode
-Use the editor/visualizer mode to print extra parsing info alongside a matrix of amplitudes showing when and how much each actuation will be. This can help clarify what a timeline has defined or where an error is. Run the program with `main.py -e [filename]` to launch into this mode, or select it from the main menu.
+Use the editor/visualizer mode to print extra parsing info alongside a matrix of amplitudes showing when and how much each actuation will be. This can help clarify what a timeline has defined or where an error is. Run the program with `main.py -e [filename]` to launch into this mode directly or select it from the main menu.
 
 ## Files
-The motion file specifies intervals on channels. Use the .gait or .txt extension, and place gaits in the `gaits` folder, which is next to `main.py`. The program only automatically scans this folder when presenting the file-selection menu, but you can specify any file location if you don't mind typing it.
+The motion file specifies intervals on channels. Use the .gait or .txt extension, and place gaits in the `gaits` folder, which is next to `main.py`. The program automatically scans only this folder when presenting the file-selection menu, but you can specify any file location if you don't mind typing the path.
 
-Each interval consists of 3 integers: start, duration, and amplitude (in that order). These are separated by spaces. Each interval is separated by a comma. Each channel is a single line of the file. Channels currently cannot be empty (just use `0 0 0` to ignore it), so if a line has no (valid) intervals, the next line is checked for the next channel. Example of standard syntax:
+### Syntax and Formatting
+Each interval consists of 3 integers: start, duration, and amplitude (in that order). These are separated by spaces (or any whitespace). Each interval is separated by a comma and optional whitespace. Each channel is a single line of the file. Channels currently cannot be empty (just use `0 0 0` to ignore a channel), so if a line has no (valid) intervals, the next line is checked for the next channel. Example of standard syntax:
 
 	1 2 3, 4 5 6
-	# Comment symbol ignores this line
-	1 2 3,        7 8 9 # In-line syntax
+	# Comment symbol ignores this line. The line above is channel 0
+	1 2 3,        7 8 9 # In-line comment. This line is channel 1
 
-This file would read 2 channels with 2 intervals each. 
+This snippet would read 2 channels with 2 intervals each. 
 
 Comments begin at `#` and end at the end of the line:
 
 	1 2 3 # an in-line comment, 4 5 6
 
-This example would parse (1 2 3) and ignore the rest. 
+This example would parse (1 2 3) and ignore the rest.
 
-Feel free to use spaces and tabs to help with formatting and readability; it will be ignored by the parser. If there are syntax errors, the file will still execute. Errors are soft and do not affect execution, except to potentially invalidate any numbers involved. Read "Troubleshooting" -> "File isn't reading as expected" for tips on finding syntax mistakes.
+The number of steps in a timeline (how many columns are in the visualizer) can be specified before the intervals. If the step count is not specified, a default of 10 is used. The parser is looking for a line with a single number in it that isn't in a comment. Here is the recommended format for the beginning of a gait file:
+
+	# Here is a comment saying what this gait is for
+	steps: 15
+
+	1 2 3, 4 5 6
+
+Feel free to use spaces and tabs to help with formatting and readability; it will be ignored by the parser. If there are syntax errors, the file will still execute. Errors are soft and do not affect execution, except to potentially invalidate any numbers involved, or shifting intended channels. Pay close attention to the number matrix printed before running a gait to ensure safety. Read "Troubleshooting" -> "File isn't reading as expected" for tips on finding syntax errors.
+
+## PWM Output
+This program will set the duty cycle of the Adafruit PCA9685 as specified in a .gait file. The scale, frequency, and board count are specified in `output.py` as `OUTPUT_SCALE`, `OUTPUT_FREQUENCY`, and `BOARD_COUNT`.
+
+The scale is the maximum duty cycle. For the Adafruit PCA9685, with 12 bits of precision, the maximum is 2048. Thus, a duty cycle of 50% would be 1024. These numbers are handled behind the scenes, but be aware that changing hardware could require changing the output scale to match.
+
+The frequency controls how many times per second the valves open and close. The Adafruit PCA9685 has a minimum frequency generally above 30Hz, so setting it to 30 (the default already specified) will use the minimum possible. Too high of a frequency does not leave time for the valves to physically switch states.
+
+The board count specifies how many Adafruit PCA9685 boards are chained together on the I2C bus. Note that boards must be consecutively addressed, so 2 boards must have offsets of 0 and 1, without skipping addresses in the middle. This is because `output.py` attempts connections to consecutive addresses after 0x040, so incorrectly soldered addressing pads will prevent a board from being recognized. Look up Raspberry Pi I2C wiring guides, or tutorials specific to the Adafruit PCA9685 for more information on how to properly assemble a new controller.
 
 ## Troubleshooting
-### Arduino isn't connecting
-Press the reset button or power cycle the Arduino. Make sure you have the correct `arduino.ino` code on the Arduino (check the "PWM Output" section for notes on this) and that it's connected and powered. Check your `COM` (Windows) or `tty` (*nix) ports and make sure the computer sees the Arduino and (if using Windows) nothing else is using the port. Also be sure you have permission to access serial ports. This might mean using sudo or running as an admin.
+### I2C devices aren't recognized
+Make sure the user has access to the I2C interface. This often means being part of the `I2C` UNIX group. For a quick fix, try running the program with `sudo`. Read the "PWM Output" section for more information on other possible issues. As always, make sure no wires are disconnected, shorted, or out of place.
 
 ### File isn't reading as expected
-Switch to the editor/visualizer mode and take a close look at the extra parsing info. If you use Notepad++, go to `language -> Define your language -> Import` and choose the language definition file, `NP++_Gait_Def.xml`, in the root of the repository. This will enable syntax highlighting that can help in identify mistakes.
+Switch to the editor/visualizer mode and take a close look at the extra parsing info. If you use Notepad++, go to `language -> Define your language -> Import` and choose the language definition file, `NP++_Gait_Def.xml`, in the root of the repository. This will enable syntax highlighting for .gait that can help identify any mistakes. Note that this language definition isn't perfect because of the limitations of the Notepad++ definition system. For example, the requirements for properly specifying a timeline length are too complex to be properly detected except in the editor/visualizer mode.
 
 ### Colored output doesn't work properly
-You must use a console that supports ANSI color escape sequences. This means CMD and PowerShell on Windows won't work. If you're using Windows, try installing WSL by searching for "Ubuntu" on the Windows Store and following the instructions.
-
-## Arduino
-The Arduino Mega 2560 connects with ASCII encoding and 9600 baud over whatever serial connection is available on the host. Numbers specify the desired duty cycle within the range [0, 100]. First, send 'y' to enable listeneing for valves. Each command that specifies valve openings must start with 'v'. The first number (after 'v') is for the first pin, the second for the second pin, etc. until 4 pins have been read. Any pins not changed are set to 0. Within a command, parameters are separated by spaces. For example, to set pins 1-4 to increments of 25%, send `y` and `v 25 50 75 100`. The Arduino code sets registers specific to the Arduino Mega 2560 to change the PWM output frequency, so this code will only work on that board.
+Make sure you have the most recent version of the `ansicolor` package installed. Your terminal must also support basic color ANSI escape sequences.
 
 ## Attribution
-This repository is maintained by Oregon State University mLab, for research in soft robotics. All code developed by Gabriel Kulp (kulpga[at]oregonstate[dot]edu), except when specified differently in the program header.
+This repository is maintained by Oregon State University mLab, for research in soft robotics. All code developed by Gabriel Kulp (kulpga[at]oregonstate[dot]edu), except when specified differently in a file header.

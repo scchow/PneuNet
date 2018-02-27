@@ -1,4 +1,5 @@
 # 8 seconds per cycle, 0.2 amp
+steps: 4
 0 1 1
 		1 1 1
 				2 1 1

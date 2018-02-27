@@ -7,19 +7,17 @@
     most fundamental to this program.
 """
 
+# Global setting for amplitude granularity
+STEPS_IN_AMPLITUDE = 10
+
 import time
 from collections import namedtuple
 
 # Make data structure used for each interval in the timeline
 Interval = namedtuple("Interval", "start duration amplitude")
 
-# Global setting for time granularity
-STEPS_IN_TIMELINE = 32
-# Global setting for amplitude granularity
-STEPS_IN_AMPLITUDE = 10
-
 # runs through one cycle of the timeline
-def do_cycle(device, timeline, total_time, multiplier):
+def do_cycle(device, timeline, steps, total_time, multiplier):
     """
     Runs through one cycle of the gait.
         :param device: is the output device
@@ -31,7 +29,7 @@ def do_cycle(device, timeline, total_time, multiplier):
     curr_index = [0] * len(timeline)
 
     # run through timeline
-    for curr_step in range(0, STEPS_IN_TIMELINE):
+    for curr_step in range(0, steps):
         step_start_time = time.time()
         # start row with time stamp
         print(curr_step, "\t", sep='', end='')
@@ -47,7 +45,7 @@ def do_cycle(device, timeline, total_time, multiplier):
         # set all values at once
         write_out(device, amplitudes, multiplier)
 
-        sleep_time = (total_time/STEPS_IN_TIMELINE) - (time.time() - step_start_time)
+        sleep_time = (total_time/steps) - (time.time() - step_start_time)
         if sleep_time > 0:
             time.sleep(sleep_time)
 
@@ -102,6 +100,6 @@ def write_out(device, values, multiplier):
     scaled_values = []
     # re-scales data from internal representation to external input representation.
     for value in values:
-        value = float(value) * float(multiplier) / float(STEPS_IN_TIMELINE)
+        value = float(value) * float(multiplier) / float(STEPS_IN_AMPLITUDE)
         scaled_values.append(value)
     device.send(scaled_values)

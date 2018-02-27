@@ -7,13 +7,14 @@
 """
 
 from ansicolor import black # install package by typing: pip install ansicolor
-from core import STEPS_IN_TIMELINE, read_channel
+from core import read_channel
 
-def print_timeline(timeline):
+def print_timeline(timeline, steps):
     """
     Prints a graphical representation of the timeline to the console.
         :param timeline: is the 2D array of intervals to read.
     """
+
     print() # newline
 
     # count number of digits of left column to align numbers
@@ -25,7 +26,7 @@ def print_timeline(timeline):
         amp = 0
         print(str(channel).zfill(pad_length), " >  ", sep='', end='')
         # print the columns
-        for current_time in range(0, STEPS_IN_TIMELINE):
+        for current_time in range(0, steps):
             (amp, current_index) = read_channel(timeline, channel, current_index, current_time)
             # make the zeros stand out. easier to look at that way
             if amp == 0:

@@ -6,7 +6,11 @@
     This module handles parsing timelines from files.
 """
 
+# Global setting for time granularity default
+DEFAULT_STEPS_IN_TIMELINE = 10
+
 from pathlib import Path
+import re
 from ansicolor import red, green, blue, yellow, black, magenta, white
 # install package by typing: pip install ansicolor
 from core import Interval
@@ -22,6 +26,7 @@ def read_timeline(filename, verbose=False):
     """
     # make timeline array
     timeline = []
+    steps = 0
 
     count, total = 0, 0
 
@@ -58,6 +63,24 @@ def read_timeline(filename, verbose=False):
                     print(black("\tParsing remaining line > ", bold=True), end='')
                     print(add_quotes(line[:comment_pos]))
                 line = line[:comment_pos]
+
+            if count == 0 and steps == 0:
+                found_steps = False
+                try:
+                    nums_in_line = re.findall(r'\d+', line)
+                    if len(nums_in_line) == 1:
+                        steps = int(nums_in_line[0])
+                        found_steps = True
+                except (ValueError, IndexError):
+                    pass
+                if verbose:
+                    if found_steps:
+                        print(green("\tFound step count:", bold=True), steps)
+                    else:
+                        print(yellow("\tFailed to find step count before first interval.", bold=True))
+                        print(black("\t\tSetting step count to default:", bold=True), DEFAULT_STEPS_IN_TIMELINE)
+                if found_steps:
+                    continue
 
             intvs = line.split(",")
             timeline.append([])
@@ -104,7 +127,10 @@ def read_timeline(filename, verbose=False):
         print("reached end of file.")
         print("found {} intervals across {} channels.".format(total, len(timeline)))
 
-    return timeline, errors
+    if steps == 0:
+        steps = DEFAULT_STEPS_IN_TIMELINE
+
+    return timeline, steps, errors
 
 def file_exists(filename):
     """

@@ -21,7 +21,7 @@ def start():
     """
 
     # Extract command line arguments
-    filename, timeline, cycle_time, multiplier = handle_argv()
+    filename, timeline, steps, cycle_time, multiplier = handle_argv()
     # Note that this is where the program sits while the visualizer is running
 
     # if handle_argv() can't find some info, it's set to none.
@@ -29,7 +29,7 @@ def start():
     if not timeline:
         print("File not specified.")
     while not timeline:
-        timeline, filename = choose_timeline(verbose=False)
+        timeline, steps, filename = choose_timeline(verbose=False)
 
     if not cycle_time:
         print("Cycle time not specified.")
@@ -40,7 +40,7 @@ def start():
         multiplier = choose_multiplier()
 
     # Python doesn't have a do-while, so execute before entering the menu loop.
-    execute_gaits(filename, timeline, cycle_time, multiplier)
+    execute_gaits(filename, timeline, steps, cycle_time, multiplier)
 
     while True:
         print("\n\nWhat next?\n")
@@ -54,23 +54,23 @@ def start():
         # Python also doesn't have switch statements. Oh well.
         menu = input("(1-6) ").strip()
         if menu == '1':
-            execute_gaits(filename, timeline, cycle_time, multiplier)
+            execute_gaits(filename, timeline, steps, cycle_time, multiplier)
             continue
         elif menu == '2':
             print("Previous:", multiplier)
             multiplier = choose_multiplier()
-            execute_gaits(filename, timeline, cycle_time, multiplier)
+            execute_gaits(filename, timeline, steps, cycle_time, multiplier)
             continue
         elif menu == '3':
             print("Previous:", cycle_time)
             cycle_time = choose_cycle_time()
-            execute_gaits(filename, timeline, cycle_time, multiplier)
+            execute_gaits(filename, timeline, steps, cycle_time, multiplier)
             continue
         elif menu == '4':
-            timeline, filename = choose_timeline(verbose=False)
+            timeline, steps, filename = choose_timeline(verbose=False)
             continue
         elif menu == '5':
-            filename, timeline = start_visualizer(filename)
+            filename, timeline, steps = start_visualizer(filename)
             continue
         elif menu == '6':
             exit()
@@ -86,25 +86,34 @@ def handle_argv():
     # the first element of argv is the program name, so 1 argument means length of 2
     if len(sys.argv) >= 2:
         # check for editor switch
+        if sys.argv[1] == "-h":
+            print("No parameters necessary for complete operation. For run mode:")
+            print("\t./main.py [filename [cycle_time multiplier]]")
+            print("\nFor editor/visualizer mode:")
+            print("\t./main.py -e [filename]")
+            print("\nTo print this message, use:")
+            print("\t./main.py -h")
+            sys.exit(0)
+            return None, None, None, None, None
         if sys.argv[1] == "-e":
             # only the filename can come after the -e
             if len(sys.argv) > 3:
                 print("Invalid editor/visualizer syntax. Use -e [filename]\n")
                 input("Press enter to ignore...")
             # start_visualizer asks for a file if none is specified, so send None if invalid
-            filename, timeline = start_visualizer(sys.argv[2] if len(sys.argv) >= 3 else None)
+            filename, timeline, steps = start_visualizer(sys.argv[2] if len(sys.argv) >= 3 else None)
             # return None to set cycle_time and multiplier
-            return filename, timeline, None, None
+            return filename, timeline, steps, None, None
 
     # initialize to None so that if not set, they're declared
-    filename, timeline, cycle_time, multiplier = None, None, None, None
+    filename, timeline, steps, cycle_time, multiplier = None, None, None, None, None
     bad_input = False
     try:
         # only accept (filename) or (filename with both values). no need to
         # accept only cycle_time or multiplier
         if len(sys.argv) == 2 or len(sys.argv) == 4:
             filename = sys.argv[1]
-            timeline, filename = choose_timeline(filename)
+            timeline, steps, filename = choose_timeline(filename, verbose=False)
             # choose_timeline() can return none if the chosen file exists but is bad
             if not timeline:
                 bad_input = True
@@ -124,8 +133,8 @@ def handle_argv():
     if bad_input:
         print("Argument error. Format is [filename] [cycle_time multiplier]")
         print("or, for editor/visualizer mode, -e [filename]\n")
-        return None, None, None, None
-    return filename, timeline, cycle_time, multiplier
+        return None, None, None, None, None
+    return filename, timeline, steps, cycle_time, multiplier
 
 def start_visualizer(filename=None):
     """
@@ -136,7 +145,7 @@ def start_visualizer(filename=None):
     """
     print("Choose a file to edit/visualize:")
     while True:
-        timeline, filename = choose_timeline(filename, verbose=True)
+        timeline, steps, filename = choose_timeline(filename, verbose=True)
 
         if not timeline:
             print("file not found: {}".format(add_quotes(filename)))
@@ -157,7 +166,7 @@ def start_visualizer(filename=None):
             os.system('cls' if os.name == 'nt' else 'clear')
 
     print("\n")
-    return filename, timeline
+    return filename, timeline, steps
 
 def choose_timeline(filename=None, folder="gaits", verbose=None):
     """
@@ -179,7 +188,7 @@ def choose_timeline(filename=None, folder="gaits", verbose=None):
         verbose = input("Show extra parsing info? (y/N): ").strip().lower()
         verbose = (verbose == "y" or verbose == "yes")
 
-    timeline, errors = read_timeline(filename, verbose)
+    timeline, steps, errors = read_timeline(filename, verbose)
 
     if errors:
         print("finished parsing with errors")
@@ -191,9 +200,9 @@ def choose_timeline(filename=None, folder="gaits", verbose=None):
             print("Timeline is empty. There is nothing to do.")
         return None, None
 
-    print_timeline(timeline)
+    print_timeline(timeline, steps)
 
-    return timeline, filename
+    return timeline, steps, filename
 
 def choose_cycle_time():
     """
@@ -249,7 +258,7 @@ def choose_file(folder):
 
     return "{}/{}".format(folder, files[choice - 1])
 
-def execute_gaits(filename, timeline, cycle_time, multiplier):
+def execute_gaits(filename, timeline, steps, cycle_time, multiplier):
     """
     Runs through the gait until stopped by user.
         :param filename: is the path to display to display.
@@ -276,7 +285,7 @@ def execute_gaits(filename, timeline, cycle_time, multiplier):
         cycle = 0
         while True:
             print("\nCycle #{} at time {}s".format(cycle + 1, time.time() - start_time))
-            do_cycle(board, timeline, cycle_time, multiplier)
+            do_cycle(board, timeline, steps, cycle_time, multiplier)
             cycle += 1
     except KeyboardInterrupt:
         print("\nStopping playback...", end='')
