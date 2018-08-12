@@ -19,7 +19,7 @@ To enter the editor/visualizer mode directly, pass `-e`:
 You can optionally specify a gait file after. If none is specified, the user will be prompted to choose as normal.
 
 ## PWM Output
-This program will set the duty cycle of Arduino PWM pins as specified in the motion config file. This is the main purpose of this program. Look up the PWM-capable pins and change `PINS` and `PIN_COUNT` in `arduino.ino` accordingly before compiling for your particular Arduino board. See the "Arduino" section for details on the protocol used for the serial connection.
+This program will set the duty cycle of Arduino PWM pins as specified in the motion config file. This is the main purpose of this program. Look up the PWM-capable pins and change `PINS` and `PIN_COUNT` in `arduino.ino` accordingly before compiling for your particular Arduino board.
 
 ## Editor/Visualizer Mode
 Use the editor/visualizer mode to print extra parsing info alongside a matrix of amplitudes showing when and how much each actuation will be. This can help clarify what a timeline has defined or where an error is. Run the program with `main.py -e [filename]` to launch into this mode, or select it from the main menu.
@@ -52,9 +52,6 @@ Switch to the editor/visualizer mode and take a close look at the extra parsing 
 
 ### Colored output doesn't work properly
 You must use a console that supports ANSI color escape sequences. This means CMD and PowerShell on Windows won't work. If you're using Windows, try installing WSL by searching for "Ubuntu" on the Windows Store and following the instructions.
-
-## Arduino
-The Arduino connects with ASCII encoding and 9600 baud over whatever serial connection is available on the host. The commands are effectively time-delimited. The format of each command is numbers separated by spaces. Numbers specify the desired duty cycle within the range [0, 255]. The first number is for pin 0 (as specified at the top of `arduino.ino`), the second for pin 1, etc. until the input buffer is empty. Any pins not changed are set to 0, and any extra pins specified are ignored. Sending 'a' aborts operation by setting all duty cycles to 0. After any command, the Arduino sends 'r' in response to acknowledge it has read the command.
 
 ## Attribution
 This repository is maintained by Oregon State University mLab, for research in soft robotics. All code developed by Gabriel Kulp: kulpga[at]oregonstate[dot]edu.
